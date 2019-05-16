@@ -27,7 +27,7 @@ namespace FaceDetection
             index = 0;
             foreach (var file in files)
             {
-                if ((Path.GetExtension(file) == ".jpg") || (Path.GetExtension(file) == ".jpeg"))
+                if ((Path.GetExtension(file) == ".jpg") || (Path.GetExtension(file) == ".jpeg") || (Path.GetExtension(file) == ".JPG"))
                 {
                     photos.Add(new Photo(file));
                     //Console.WriteLine(file);
@@ -37,17 +37,17 @@ namespace FaceDetection
 
         public Bitmap NextImage()
         {
-            CzaryMary();
 
             //zapisanie zdjecia do folderu "Changed Photos" znajdujacego sie w projekcie"
             if (!System.IO.Directory.Exists(@"../../Changed Photos/"))System.IO.Directory.CreateDirectory(@"../../Changed Photos/");
             //photos[index].Btm.Save(@"../../Changed Photos/"  + photos[index].FileName + @"_changed.jpeg", System.Drawing.Imaging.ImageFormat.Jpeg);
-
-            return photos[index++].Btm;
+            Photo tmp = CzaryMary();
+            index++;
+            return tmp.Btm;
              
         }
 
-        public void CzaryMary()
+        public Photo CzaryMary()
         {
             MCvScalar RED = new MCvScalar(0, 0, 255);
             MCvScalar GREEN = new MCvScalar(0, 255, 0);
@@ -76,36 +76,41 @@ namespace FaceDetection
                 var imageparts = new List<Image<Bgr, byte>>();
 
                 int i = 1;
-                foreach (var eye in eyes.Reverse())
+                foreach (var eye in eyes)
                 {
-                    if (i > 2) break;
-                    var xd = eye;
-                    CvInvoke.Rectangle(imageCV, eye, GREEN, 2);
 
-                    xd.X += face.X;
-                    xd.Y += face.Y;
+                    if (eye.Y < face.Height * 0.5)
+                    {
+                        //Console.WriteLine("EY:"++" EY:"++"FH:"+);
+                        CvInvoke.Rectangle(imageCV, eye, GREEN, 2);
+                        var xd = eye;
+                        xd.X += face.X;
+                        xd.Y += face.Y;
 
-                    imageCV.ROI = xd;
+                        imageCV.ROI = xd;
 
-                    var ziomek = imageCV.HoughCircles(new Bgr(), new Bgr(), 60, 60);
-                    ziomek.Save(@"../../Changed Photos/chuj.jpeg");
+                        imageCV.Save(@"../../Changed Photos/" + photos[index].FileName + @"_eye" + i + ".jpeg");
 
-                    imageCV.Save(@"../../Changed Photos/" + photos[index].FileName + @"_eye" +i +".jpeg");
+                        imageCV.ROI = face;
 
-                    imageCV.ROI = face;
-
-                    i++;
-
+                        i++;
+                    }
                 }
-                i = 1;
+                if(i!=3)Console.WriteLine("Zdjecie "+ photos[index].FileName + " jest nieprawidlowe!");
+                Rectangle correctSmile = new Rectangle();
+                correctSmile.Y = 0;
                 foreach (var smile in smiles)
                 {
-                    if (i > 1) break;
-                    CvInvoke.Rectangle(imageCV, smile, BLUE, 2);
-                    i++;
+                    if (smile.Y > correctSmile.Y && Math.Abs((smile.X + (smile.Width / 2.0))-face.Width/2.0)<10 ) correctSmile = smile;
+
+
                 }
+                if(smiles.Count()>0 && correctSmile.Y > face.Height * 0.5) CvInvoke.Rectangle(imageCV, correctSmile, BLUE, 2);
+                Console.WriteLine("smile:" + (correctSmile.X + (correctSmile.Width / 2.0)) + " srodek fejsa:" + face.Width / 2.0);
                 imageCV.Save(@"../../Changed Photos/" + photos[index].FileName + @"_changed.jpeg");
             }
+            Photo tmp = new Photo(imageCV.Bitmap);
+            return tmp;
         }
 
     }

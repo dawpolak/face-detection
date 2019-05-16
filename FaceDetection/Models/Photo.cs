@@ -26,5 +26,13 @@ namespace FaceDetection
             G = new int[Btm.Width, Btm.Height];
             B = new int[Btm.Width, Btm.Height];
         }
+        public Photo(Bitmap btm)
+        {
+            FileName = "";
+            Btm = btm;
+            R = new int[Btm.Width, Btm.Height];
+            G = new int[Btm.Width, Btm.Height];
+            B = new int[Btm.Width, Btm.Height];
+        }
     }
 }
